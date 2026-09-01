@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#1F7A72">
+<title>سِدر — لوحة الإدارة</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+:root{
+  --bg:#F7F2E8;--card:#FFFDF8;--line:#E4D7C1;--line-2:#F0E7D6;
+  --ink:#2A2018;--ink-2:#6E6053;--ink-3:#A0917E;
+  --brand:#1F7A72;--brand-2:#186460;--brand-soft:#DFEEEB;--brand-ink:#14524E;
+  --tin:#B5722A;--tin-soft:#F7EBD9;--sand:#EDE1C9;--sand-ink:#7A5A2E;
+  --palm:#6B7D57;--palm-soft:#E9EDE1;--bad:#B23B2E;--bad-soft:#F9E9E6;--r:12px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{background:var(--bg);color:var(--ink);font-family:Almarai,"Segoe UI",Tahoma,sans-serif;font-size:15px;line-height:1.7;-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4{font-weight:800;line-height:1.4}
+button,input,select{font:inherit;color:inherit}
+button{background:none;border:none;cursor:pointer;font-weight:700}
+:focus-visible{outline:2.5px solid var(--brand);outline-offset:2px;border-radius:6px}
+
+/* دخول */
+.gate{min-height:100dvh;display:grid;place-items:center;padding:24px}
+.gate__box{width:100%;max-width:360px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:26px}
+.gate h1{font-size:26px;text-align:center}
+.gate .s{text-align:center;color:var(--ink-2);font-weight:400;font-size:13.5px;margin-bottom:22px}
+.input{width:100%;background:var(--card);border:1.5px solid var(--line);border-radius:var(--r);padding:13px 14px;font-size:15px;font-weight:400;transition:.15s}
+.input:focus{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-soft);outline:none}
+label{display:block;font-size:13px;font-weight:700;margin:0 0 6px}
+.fld{margin-bottom:14px}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:13px 16px;border-radius:var(--r);font-size:15px;font-weight:800;transition:.15s}
+.btn--main{background:var(--brand);color:#fff}.btn--main:hover{background:var(--brand-2)}
+.btn--out{border:1.5px solid var(--line);background:var(--card)}.btn--out:hover{border-color:var(--brand);color:var(--brand)}
+.btn--sm{width:auto;padding:8px 13px;font-size:13px;border-radius:9px}
+.btn--bad{border:1.5px solid var(--bad-soft);color:var(--bad);background:var(--bad-soft)}
+.btn[disabled]{opacity:.45;pointer-events:none}
+.gate .sub{font-size:12px;color:var(--ink-3);font-weight:400;margin-top:6px;text-align:right}
+.pwbox{position:relative}
+.pwbox .input{padding-left:44px}
+.pwbox button{position:absolute;left:6px;top:50%;transform:translateY(-50%);width:34px;height:34px;border-radius:8px;font-size:15px;opacity:.6}
+.pwbox button:hover{opacity:1;background:var(--line-2)}
+.msg{background:var(--bad-soft);color:var(--bad);border-radius:9px;padding:10px 12px;font-size:13px;font-weight:700;margin-bottom:14px;display:none}
+.msg.on{display:block}
+
+/* هيكل */
+.top{background:var(--brand);color:#fff;position:sticky;top:0;z-index:40}
+.top__in{max-width:1280px;margin:0 auto;padding:12px 20px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.top b{font-size:19px}
+.top .who{font-size:12.5px;opacity:.85;font-weight:400}
+.top .sp{flex:1}
+.top button{background:rgba(255,255,255,.18);color:#fff;border-radius:9px;padding:7px 13px;font-size:13px}
+.top button.on{background:#fff;color:var(--brand-ink)}
+.wrap{max-width:1280px;margin:0 auto;padding:20px 20px 60px}
+.page{display:none}.page.on{display:block}
+.head{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:16px}
+.head h2{font-size:20px}
+.head .st{font-size:13px;color:var(--ink-2);font-weight:400;display:flex;align-items:center;gap:7px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--palm);animation:bl 1.8s infinite}
+@keyframes bl{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* لوح الطلبات */
+.board{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;align-items:start}
+.colh{display:flex;justify-content:space-between;padding:0 2px 9px;font-size:14px;font-weight:800}
+.colh span.c{font-size:12.5px;color:var(--ink-2);font-weight:400}
+.col{display:grid;gap:10px}
+.tk{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:13px;border-top:4px solid var(--ink-3)}
+.tk--new{border-top-color:var(--tin)}
+.tk--making{border-top-color:var(--brand)}
+.tk--served{border-top-color:var(--palm);opacity:.6}
+.tk__h{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:9px}
+.tk__t{font-size:17px;font-weight:800;display:block}
+.tk__n{font-size:12px;color:var(--ink-3);font-weight:400}
+.tk__a{font-size:12.5px;font-weight:800;color:var(--ink-2);flex:none}
+.tk__a.w{color:var(--tin)}.tk__a.l{color:var(--bad)}
+.car{display:inline-flex;align-items:center;gap:7px;background:var(--sand);color:var(--sand-ink);border-radius:8px;padding:3px 10px;font-size:12.5px;font-weight:800;margin-top:3px}
+.car i{width:14px;height:14px;border-radius:50%;border:1px solid rgba(0,0,0,.25);flex:none}
+.tk ul{list-style:none}
+.tk li{display:flex;gap:8px;font-size:13.5px;padding:3px 0;font-weight:400;border-top:1px solid var(--line-2)}
+.tk li:first-child{border-top:none}
+.tk li b{flex:none}
+.tk li em{font-style:normal;color:var(--ink-2);font-size:12.5px}
+.tk__w{font-size:12px;color:var(--ink-3);margin-top:9px;padding-top:8px;border-top:1px solid var(--line-2);font-weight:400}
+.tk__go{width:100%;margin-top:10px;padding:10px;border-radius:9px;font-size:13.5px;font-weight:800;background:var(--ink);color:#fff}
+.tk__go.g{background:var(--palm)}
+.empty{border:1.5px dashed var(--line);border-radius:var(--r);padding:24px 16px;text-align:center;color:var(--ink-2);font-size:13.5px;font-weight:400}
+
+/* حسابات مفتوحة */
+.trow{display:flex;align-items:center;gap:14px;flex-wrap:wrap;background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;margin-bottom:9px}
+.trow__t{background:var(--brand-soft);color:var(--brand-ink);border-radius:9px;padding:6px 12px;font-weight:800;font-size:15px}
+.trow__i{flex:1;min-width:170px}
+.trow__i b{font-size:14.5px}
+.trow__i span{display:block;font-size:12.5px;color:var(--ink-2);font-weight:400}
+.trow__s{font-size:17px;font-weight:800}
+
+/* طاولات */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}
+.tcard{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px;display:flex;align-items:center;gap:12px}
+.tcard.off{opacity:.55}
+.tcard__n{width:46px;height:46px;border-radius:11px;background:var(--brand-soft);color:var(--brand-ink);display:grid;place-items:center;font-size:19px;font-weight:800;flex:none}
+.tcard__n.spot{background:var(--sand);color:var(--sand-ink)}
+.tcard__b{flex:1;min-width:0}
+.tcard__b b{font-size:15px;display:block}
+.tcard__b span{font-size:12.5px;color:var(--ink-2);font-weight:400}
+.tcard__x{display:flex;gap:6px;flex-direction:column}
+.tcard__x button{font-size:12px;color:var(--ink-2)}
+.tcard__x button:hover{color:var(--brand)}
+.tcard__x button.d:hover{color:var(--bad)}
+.addbar{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin-bottom:18px;display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
+.addbar .fld{margin:0;flex:1;min-width:120px}
+.seg{display:flex;border:1.5px solid var(--line);border-radius:10px;overflow:hidden}
+.seg button{padding:11px 15px;font-size:13.5px;color:var(--ink-2)}
+.seg button.on{background:var(--brand);color:#fff}
+
+/* أكواد */
+.qrg{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:14px;margin-top:16px}
+.qrc{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:14px;text-align:center;break-inside:avoid}
+.qrc .w{font-size:15px;font-weight:800}
+.qrc .b{padding:6px;display:inline-grid;place-items:center;margin:9px 0 7px;min-height:114px}
+.qrc .t{font-size:23px;font-weight:800;line-height:1.2}
+.qrc .h{font-size:11.5px;color:var(--ink-3);font-weight:400}
+@media (max-width:900px){.board{grid-template-columns:1fr}}
+@media print{.top,.head,.addbar,.noprint{display:none!important}.wrap{padding:0}.qrg{grid-template-columns:repeat(3,1fr)}}
+</style>
+</head>
+<body>
+
+<!-- الدخول -->
+<div class="gate" id="gate">
+  <div class="gate__box">
+    <h1>سِدر</h1>
+    <div class="s">لوحة الإدارة والبار</div>
+    <div class="msg" id="gateMsg"></div>
+    <div class="fld"><label for="em">اسم المستخدم</label>
+      <input class="input" id="em" type="text" dir="ltr" autocomplete="username" autocapitalize="off" spellcheck="false" placeholder="admin">
+      <div class="sub">الاسم اللي أنشأته في Firebase — بدون إيميل.</div></div>
+    <div class="fld"><label for="pw">كلمة المرور</label>
+      <div class="pwbox"><input class="input" id="pw" type="password" autocomplete="current-password" placeholder="••••••••">
+      <button data-a="eye" id="eye" aria-label="إظهار كلمة المرور">👁</button></div></div>
+    <button class="btn btn--main" id="inBtn" data-a="signin">دخول</button>
+  </div>
+</div>
+
+<!-- اللوحة -->
+<div id="app" style="display:none">
+  <div class="top"><div class="top__in">
+    <b>سِدر</b>
+    <button class="on" id="p-live" data-a="page" data-v="live">الطلبات</button>
+    <button id="p-tabs" data-a="page" data-v="tabs">الحسابات</button>
+    <button id="p-tables" data-a="page" data-v="tables">الطاولات</button>
+    <button id="p-qr" data-a="page" data-v="qr">الأكواد</button>
+    <span class="sp"></span>
+    <span class="who" id="who"></span>
+    <button data-a="signout">خروج</button>
+  </div></div>
+
+  <div class="wrap">
+    <section class="page on" id="pg-live">
+      <div class="head">
+        <div><h2>طلبات اليوم</h2><div class="st">تنزل هنا لحظة إرسالها من الطاولة أو السيارة</div></div>
+        <div class="st"><span class="dot"></span><span id="clock">--:--</span> · <span id="cnt">0</span>
+          <button class="btn btn--out btn--sm" data-a="sound" id="sndBtn" style="margin-right:10px">🔔 الصوت: مفعّل</button></div>
+      </div>
+      <div class="board">
+        <div><div class="colh"><span style="color:var(--tin)">جديد</span><span class="c" id="n1">0</span></div><div class="col" id="col-new"></div></div>
+        <div><div class="colh"><span style="color:var(--brand)">تحت التحضير</span><span class="c" id="n2">0</span></div><div class="col" id="col-making"></div></div>
+        <div><div class="colh"><span style="color:var(--palm)">تم التقديم</span><span class="c" id="n3">0</span></div><div class="col" id="col-served"></div></div>
+      </div>
+    </section>
+
+    <section class="page" id="pg-tabs">
+      <div class="head"><div><h2>الحسابات المفتوحة</h2><div class="st">كل عميل لسه ما دفع</div></div></div>
+      <div id="tabsList"></div>
+    </section>
+
+    <section class="page" id="pg-tables">
+      <div class="head"><div><h2>الطاولات والمواقف</h2><div class="st">أضف طاولة أو موقف سيارة، والكود يتولد لها تلقائياً</div></div></div>
+      <div class="addbar">
+        <div class="fld" style="flex:0 0 auto"><label>النوع</label>
+          <div class="seg"><button class="on" id="kd-table" data-a="kind" data-v="table">طاولة</button><button id="kd-spot" data-a="kind" data-v="spot">موقف سيارة</button></div></div>
+        <div class="fld"><label for="t-no">الرقم</label><input class="input" id="t-no" type="number" min="1" placeholder="13"></div>
+        <div class="fld"><label for="t-label">الوصف (اختياري)</label><input class="input" id="t-label" placeholder="بجانب النافذة"></div>
+        <button class="btn btn--main" style="width:auto;padding:13px 22px" data-a="add-table">أضف</button>
+      </div>
+      <div class="msg" id="tblMsg"></div>
+      <div class="grid" id="tablesGrid"></div>
+    </section>
+
+    <section class="page" id="pg-qr">
+      <div class="head">
+        <div><h2>أكواد QR</h2><div class="st">اطبعها والصقها على الطاولات وستاندات المواقف</div></div>
+        <div style="display:flex;gap:9px;align-items:flex-end;flex-wrap:wrap">
+          <div class="fld" style="margin:0"><label for="site">رابط موقع العميل</label>
+            <input class="input" id="site" placeholder="https://cafe-3a2fa.web.app" style="min-width:260px"></div>
+          <button class="btn btn--out btn--sm" data-a="save-site">حفظ وتحديث</button>
+          <button class="btn btn--main btn--sm" data-a="print">طباعة</button>
+        </div>
+      </div>
+      <div class="qrg" id="qrg"></div>
+    </section>
+  </div>
+</div>
+
+<script type="module">
+import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+import {getAuth,signInWithEmailAndPassword,signOut,onAuthStateChanged}
+  from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+import {getFirestore,collection,doc,setDoc,updateDoc,deleteDoc,getDoc,onSnapshot,query,where,orderBy}
+  from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+
+const app=initializeApp({
+  apiKey:"AIzaSyBsyylPgzhdXSUphEBgQafFsbp9a-iXh2w",
+  authDomain:"cafe-3a2fa.firebaseapp.com",
+  projectId:"cafe-3a2fa",
+  storageBucket:"cafe-3a2fa.firebasestorage.app",
+  messagingSenderId:"755286482656",
+  appId:"1:755286482656:web:b4da9904cb8bfe0181ba85",
+  measurementId:"G-6TE81M2S6T"
+});
+const auth=getAuth(app), db=getFirestore(app);
+const ORD=collection(db,"orders"), SES=collection(db,"sessions"), TBL=collection(db,"tables");
+
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const rs=n=>n.toFixed(2)+" ر.س";
+const VAT=.15;
+const COLORS={"أبيض":"#FFFFFF","أسود":"#1B1B1B","فضي":"#C9CBCD","رمادي":"#7B7F84","أزرق":"#2B5A9B","أحمر":"#B32A22","بني":"#6E4B32","أخضر":"#2F6B45","ذهبي":"#C1A257"};
+const dayStart=()=>{const d=new Date();d.setHours(0,0,0,0);return d.getTime()};
+
+const DOMAIN="sidr.local";   /* الاسم يتحوّل لـ user@sidr.local عند الدخول */
+const S={orders:[],sessions:[],tables:[],kind:"table",site:"",sound:true,seen:new Set(),ready:false};
+
+/* ───── الدخول ───── */
+onAuthStateChanged(auth,u=>{
+  if(u){
+    $("gate").style.display="none"; $("app").style.display="block";
+    $("who").textContent=(u.email||"").split("@")[0]; start();
+  }else{
+    $("gate").style.display="grid"; $("app").style.display="none";
+  }
+});
+async function signin(){
+  const b=$("inBtn"); b.disabled=true; b.textContent="جاري الدخول…"; $("gateMsg").classList.remove("on");
+  const u=$("em").value.trim().toLowerCase().replace(/\s+/g,"");
+  if(!u||!$("pw").value){
+    $("gateMsg").textContent="اكتب اسم المستخدم وكلمة المرور.";$("gateMsg").classList.add("on");
+    b.disabled=false;b.textContent="دخول";return;
+  }
+  const email=u.includes("@")?u:u+"@"+DOMAIN;
+  try{ await signInWithEmailAndPassword(auth,email,$("pw").value) }
+  catch(e){
+    const m={"auth/invalid-credential":"الاسم أو كلمة المرور غير صحيحة.",
+             "auth/user-not-found":"ما فيه مستخدم بهذا الاسم.",
+             "auth/wrong-password":"كلمة المرور غير صحيحة.",
+             "auth/invalid-email":"اسم المستخدم فيه رموز غير مسموحة.",
+             "auth/too-many-requests":"محاولات كثيرة — انتظر شوي وجرّب.",
+             "auth/network-request-failed":"ما فيه اتصال بالإنترنت."}[e.code]||"ما قدرنا نسجّل الدخول.";
+    $("gateMsg").textContent=m; $("gateMsg").classList.add("on");
+  }
+  b.disabled=false; b.textContent="دخول";
+}
+
+/* ───── الاشتراكات اللحظية ───── */
+let started=false;
+function start(){
+  if(started)return; started=true;
+  onSnapshot(query(ORD,where("at",">=",dayStart()),orderBy("at")),snap=>{
+    const fresh=[];
+    S.orders=snap.docs.map(d=>{
+      const o={id:d.id,...d.data()};
+      if(S.ready&&o.status==="new"&&!S.seen.has(o.id))fresh.push(o);
+      S.seen.add(o.id); return o;
+    });
+    if(fresh.length&&S.sound)beep();
+    S.ready=true; renderBoard(); renderTabs();
+  },err=>console.error("orders",err));
+
+  onSnapshot(query(SES,where("at",">=",dayStart())),snap=>{
+    S.sessions=snap.docs.map(d=>({id:d.id,...d.data()}));
+    renderTabs();
+  },err=>console.error("sessions",err));
+
+  onSnapshot(query(TBL,orderBy("no")),snap=>{
+    S.tables=snap.docs.map(d=>({id:d.id,...d.data()}));
+    renderTables(); renderQR();
+  },err=>console.error("tables",err));
+
+  getDoc(doc(db,"meta","config")).then(d=>{
+    S.site=(d.exists()&&d.data().siteUrl)||location.origin;
+    $("site").value=S.site; renderQR();
+  }).catch(()=>{S.site=location.origin;$("site").value=S.site});
+
+  tick(); setInterval(tick,20000);
+}
+function tick(){
+  $("clock").textContent=new Date().toLocaleTimeString("ar-SA",{hour:"2-digit",minute:"2-digit",hour12:false});
+  renderBoard();
+}
+let ac=null;
+function beep(){
+  try{
+    ac=ac||new (window.AudioContext||window.webkitAudioContext)();
+    [0,.16].forEach(t=>{
+      const o=ac.createOscillator(),g=ac.createGain();
+      o.type="sine";o.frequency.value=t?1046:784;
+      g.gain.setValueAtTime(.0001,ac.currentTime+t);
+      g.gain.exponentialRampToValueAtTime(.22,ac.currentTime+t+.02);
+      g.gain.exponentialRampToValueAtTime(.0001,ac.currentTime+t+.14);
+      o.connect(g);g.connect(ac.destination);o.start(ac.currentTime+t);o.stop(ac.currentTime+t+.16);
+    });
+  }catch(e){}
+}
+
+/* ───── لوح الطلبات ───── */
+const isCar=o=>o.kind==="car";
+function locLine(o){
+  if(isCar(o)){
+    const c=COLORS[o.carColor]||"#CCC";
+    return `<span class="tk__t">سيارة</span>
+      <span class="car"><i style="background:${c}"></i>${esc(o.carColor||"—")} · ${esc(o.carPlate||"—")}</span>
+      ${o.spot?`<span class="tk__n" style="display:block">موقف ${esc(o.spot)}</span>`:""}`;
+  }
+  return `<span class="tk__t">طاولة ${esc(o.table)}</span>`;
+}
+function desc(l){
+  if(l.d)return l.d;                       /* الوصف الجاهز من تطبيق العميل */
+  const p=[];
+  if(l.size)p.push({s:"صغير",m:"وسط",l:"كبير"}[l.size]||l.size);
+  if(l.note)p.push("«"+l.note+"»");
+  return p.join(" · ");
+}
+function renderBoard(){
+  const g={new:[],making:[],served:[]};
+  S.orders.forEach(o=>(g[o.status]||g.new).push(o));
+  ["new","making","served"].forEach((k,i)=>{
+    $("n"+(i+1)).textContent=g[k].length;
+    $("col-"+k).innerHTML=g[k].length?g[k].map(o=>ticket(o,k)).join("")
+      :`<div class="empty">${k==="new"?"ما فيه طلبات جديدة.":k==="making"?"البار فاضي.":"ما قُدّم شي بعد."}</div>`;
+  });
+  $("cnt").textContent=(g.new.length+g.making.length)+" طلب قيد التنفيذ";
+}
+function ticket(o,k){
+  const m=Math.floor((Date.now()-o.at)/60000);
+  const c=m>=8?"l":m>=4?"w":"";
+  const btn=k==="new"?`<button class="tk__go" data-a="adv" data-v="${o.id}|making">ابدأ التحضير</button>`
+    :k==="making"?`<button class="tk__go g" data-a="adv" data-v="${o.id}|served">${isCar(o)?"وصّلته للسيارة":"قدّمته"}</button>`:"";
+  return `<article class="tk tk--${k}">
+    <div class="tk__h"><div>${locLine(o)} <span class="tk__n">#${esc(o.no)}</span></div><span class="tk__a ${c}">${m} د</span></div>
+    <ul>${(o.items||[]).map(l=>`<li><b>${l.qty}×</b><span>${esc(l.n)}${desc(l)?` <em>${esc(desc(l))}</em>`:""}</span></li>`).join("")}</ul>
+    <div class="tk__w">${esc(o.name)} · ${esc(o.phone)}</div>${btn}</article>`;
+}
+
+/* ───── الحسابات ───── */
+function renderTabs(){
+  const open=S.sessions.filter(s=>!s.paid&&S.orders.some(o=>o.sid===s.id));
+  $("tabsList").innerHTML=open.length?open.map(s=>{
+    const tot=S.orders.filter(o=>o.sid===s.id).reduce((a,o)=>a+(o.items||[]).reduce((x,l)=>x+l.unit*l.qty,0),0)*(1+VAT);
+    const badge=s.kind==="car"
+      ? `<span class="trow__t" style="background:var(--sand);color:var(--sand-ink)">🚗 ${esc(s.carPlate||"")}</span>`
+      : `<span class="trow__t">${esc(s.table)}</span>`;
+    const sub=s.kind==="car"?`${esc(s.carColor||"")}${s.no?" · موقف "+esc(s.no):""}`:"صالة";
+    return `<div class="trow">${badge}
+      <span class="trow__i"><b>${esc(s.name)}</b><span>${esc(s.phone)} · ${sub} · ${Math.round((Date.now()-s.at)/60000)} دقيقة</span></span>
+      <span class="trow__s">${rs(tot)}</span>
+      <button class="btn btn--out btn--sm" data-a="cash" data-v="${s.id}|${tot.toFixed(2)}">دفع كاش</button></div>`;
+  }).join(""):`<div class="empty">ما فيه حسابات مفتوحة الآن.</div>`;
+}
+
+/* ───── الطاولات ───── */
+function renderTables(){
+  $("tablesGrid").innerHTML=S.tables.length?S.tables.map(t=>{
+    const spot=t.kind==="spot";
+    return `<div class="tcard ${t.active===false?"off":""}">
+      <span class="tcard__n ${spot?"spot":""}">${spot?"🚗":esc(t.no)}</span>
+      <span class="tcard__b"><b>${spot?"موقف "+esc(t.no):"طاولة "+esc(t.no)}</b><span>${esc(t.label||(spot?"موقف سيارة":"صالة"))}</span></span>
+      <span class="tcard__x">
+        <button data-a="toggle" data-v="${t.id}">${t.active===false?"تفعيل":"تعطيل"}</button>
+        <button class="d" data-a="del" data-v="${t.id}">حذف</button></span></div>`;
+  }).join(""):`<div class="empty">ما أضفت طاولات بعد — أضف أول طاولة من فوق.</div>`;
+}
+async function addTable(){
+  const no=parseInt($("t-no").value,10), label=$("t-label").value.trim(), kind=S.kind;
+  const msg=(t)=>{$("tblMsg").textContent=t;$("tblMsg").classList.add("on")};
+  $("tblMsg").classList.remove("on");
+  if(!(no>0))return msg("اكتب رقم صحيح للطاولة أو الموقف.");
+  const id=(kind==="spot"?"c":"t")+no;
+  if(S.tables.some(t=>t.id===id))return msg((kind==="spot"?"الموقف":"الطاولة")+" رقم "+no+" موجود من قبل.");
+  try{
+    await setDoc(doc(TBL,id),{no,label,kind,active:true,at:Date.now()});
+    $("t-no").value=""; $("t-label").value="";
+  }catch(e){ msg("ما قدرنا نحفظ — تأكد من صلاحيات قاعدة البيانات.") }
+}
+
+/* ───── الأكواد ───── */
+function renderQR(){
+  const g=$("qrg"); g.innerHTML="";
+  const base=(S.site||location.origin).replace(/\/+$/,"");
+  S.tables.filter(t=>t.active!==false).forEach(t=>{
+    const spot=t.kind==="spot";
+    const url=base+(spot?"/?c="+t.no:"/?t="+t.no);
+    const c=document.createElement("div");
+    c.className="qrc";
+    c.innerHTML=`<div class="w">سِدر</div><div class="b"></div>
+      <div class="t">${spot?"موقف "+esc(t.no):esc(t.no)}</div>
+      <div class="h">${spot?"امسح واطلب من سيارتك":"امسح واطلب من طاولتك"}</div>`;
+    g.appendChild(c);
+    const box=c.querySelector(".b");
+    try{
+      if(typeof QRCode==="undefined")throw 0;
+      new QRCode(box,{text:url,width:108,height:108,colorDark:"#2A2018",colorLight:"#ffffff",correctLevel:QRCode.CorrectLevel.M});
+    }catch(e){ box.textContent=url }
+  });
+  if(!g.children.length)g.innerHTML=`<div class="empty">أضف طاولات أول عشان تتولد الأكواد.</div>`;
+}
+
+/* ───── الأحداث ───── */
+const ACT={
+  "signin":()=>signin(),
+  "signout":()=>signOut(auth),
+  "eye":()=>{const p=$("pw");p.type=p.type==="password"?"text":"password";$("eye").textContent=p.type==="password"?"👁":"🙈"},
+  "page":v=>{
+    ["live","tabs","tables","qr"].forEach(k=>{
+      $("pg-"+k).classList.toggle("on",k===v); $("p-"+k).classList.toggle("on",k===v);
+    });
+    window.scrollTo(0,0);
+  },
+  "kind":v=>{S.kind=v;$("kd-table").classList.toggle("on",v==="table");$("kd-spot").classList.toggle("on",v==="spot")},
+  "add-table":()=>addTable(),
+  "toggle":async v=>{const t=S.tables.find(x=>x.id===v);await updateDoc(doc(TBL,v),{active:t.active===false}).catch(()=>{})},
+  "del":async v=>{const t=S.tables.find(x=>x.id===v);
+    if(confirm(`تأكيد حذف ${t.kind==="spot"?"موقف":"طاولة"} ${t.no}؟ الكود بيوقف عن الشغل.`))
+      await deleteDoc(doc(TBL,v)).catch(()=>alert("ما قدرنا نحذف — راجع صلاحيات قاعدة البيانات."))},
+  "adv":async v=>{const[id,to]=v.split("|");await updateDoc(doc(ORD,id),{status:to}).catch(()=>alert("ما قدرنا نحدّث الحالة."))},
+  "cash":async v=>{
+    const[id,tot]=v.split("|");
+    if(!confirm("تأكيد استلام "+tot+" ر.س كاش وإقفال الحساب؟"))return;
+    await setDoc(doc(SES,id),{paid:true,paidAt:Date.now(),total:+tot,method:"cash"},{merge:true}).catch(()=>alert("ما قدرنا نقفل الحساب."));
+  },
+  "sound":()=>{S.sound=!S.sound;$("sndBtn").textContent=S.sound?"🔔 الصوت: مفعّل":"🔕 الصوت: مطفي";if(S.sound)beep()},
+  "save-site":async()=>{
+    S.site=$("site").value.trim()||location.origin;
+    await setDoc(doc(db,"meta","config"),{siteUrl:S.site},{merge:true}).catch(()=>{});
+    renderQR();
+  },
+  "print":()=>window.print()
+};
+document.addEventListener("click",e=>{
+  const el=e.target.closest("[data-a]"); if(!el)return;
+  const fn=ACT[el.dataset.a]; if(!fn)return;
+  e.preventDefault(); fn(el.dataset.v,el,e);
+});
+document.addEventListener("keydown",e=>{
+  if(e.key==="Enter"&&$("gate").style.display!=="none")signin();
+});
+</script>
+</body>
+</html>
