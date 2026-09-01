@@ -39,6 +39,8 @@ label{display:block;font-size:13px;font-weight:700;margin:0 0 6px}
 .btn--sm{width:auto;padding:8px 13px;font-size:13px;border-radius:9px}
 .btn--bad{border:1.5px solid var(--bad-soft);color:var(--bad);background:var(--bad-soft)}
 .btn[disabled]{opacity:.45;pointer-events:none}
+.gate code{background:var(--sand);color:var(--sand-ink);padding:1px 7px;border-radius:5px;font-family:ui-monospace,monospace;font-size:12px;direction:ltr;display:inline-block}
+.gate ol{list-style:decimal}
 .gate .sub{font-size:12px;color:var(--ink-3);font-weight:400;margin-top:6px;text-align:right}
 .pwbox{position:relative}
 .pwbox .input{padding-left:44px}
@@ -137,7 +139,7 @@ label{display:block;font-size:13px;font-weight:700;margin:0 0 6px}
     <div class="msg" id="gateMsg"></div>
     <div class="fld"><label for="em">اسم المستخدم</label>
       <input class="input" id="em" type="text" dir="ltr" autocomplete="username" autocapitalize="off" spellcheck="false" placeholder="admin">
-      <div class="sub">الاسم اللي أنشأته في Firebase — بدون إيميل.</div></div>
+</div>
     <div class="fld"><label for="pw">كلمة المرور</label>
       <div class="pwbox"><input class="input" id="pw" type="password" autocomplete="current-password" placeholder="••••••••">
       <button data-a="eye" id="eye" aria-label="إظهار كلمة المرور">👁</button></div></div>
@@ -207,8 +209,6 @@ label{display:block;font-size:13px;font-weight:700;margin:0 0 6px}
 
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
-import {getAuth,signInWithEmailAndPassword,signOut,onAuthStateChanged}
-  from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 import {getFirestore,collection,doc,setDoc,updateDoc,deleteDoc,getDoc,onSnapshot,query,where,orderBy}
   from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
@@ -221,7 +221,7 @@ const app=initializeApp({
   appId:"1:755286482656:web:b4da9904cb8bfe0181ba85",
   measurementId:"G-6TE81M2S6T"
 });
-const auth=getAuth(app), db=getFirestore(app);
+const db=getFirestore(app);
 const ORD=collection(db,"orders"), SES=collection(db,"sessions"), TBL=collection(db,"tables");
 
 const $=id=>document.getElementById(id);
@@ -231,37 +231,31 @@ const VAT=.15;
 const COLORS={"أبيض":"#FFFFFF","أسود":"#1B1B1B","فضي":"#C9CBCD","رمادي":"#7B7F84","أزرق":"#2B5A9B","أحمر":"#B32A22","بني":"#6E4B32","أخضر":"#2F6B45","ذهبي":"#C1A257"};
 const dayStart=()=>{const d=new Date();d.setHours(0,0,0,0);return d.getTime()};
 
-const DOMAIN="sidr.local";   /* الاسم يتحوّل لـ user@sidr.local عند الدخول */
+const USER="admin";              /* غيّرهم من هنا وقت ما تحب */
+const PASS="12345";
 const S={orders:[],sessions:[],tables:[],kind:"table",site:"",sound:true,seen:new Set(),ready:false};
 
 /* ───── الدخول ───── */
-onAuthStateChanged(auth,u=>{
-  if(u){
-    $("gate").style.display="none"; $("app").style.display="block";
-    $("who").textContent=(u.email||"").split("@")[0]; start();
+/* البوابة محلية بالكامل: الاسم والباسورد فوق في الكود، بدون أي إعداد في Firebase.
+   ملاحظة: أي شخص يفتح مصدر الصفحة يقدر يقرأهم. */
+const KEY="sidr_admin_in";
+function openApp(){
+  $("gate").style.display="none"; $("app").style.display="block";
+  $("who").textContent=USER; start();
+}
+function signin(){
+  const u=$("em").value.trim().toLowerCase(), p=$("pw").value;
+  if(u===USER.toLowerCase()&&p===PASS){
+    try{sessionStorage.setItem(KEY,"1")}catch(e){}
+    $("gateMsg").classList.remove("on"); openApp();
   }else{
-    $("gate").style.display="grid"; $("app").style.display="none";
+    $("gateMsg").textContent="الاسم أو كلمة المرور غير صحيحة.";
+    $("gateMsg").classList.add("on"); $("pw").select();
   }
-});
-async function signin(){
-  const b=$("inBtn"); b.disabled=true; b.textContent="جاري الدخول…"; $("gateMsg").classList.remove("on");
-  const u=$("em").value.trim().toLowerCase().replace(/\s+/g,"");
-  if(!u||!$("pw").value){
-    $("gateMsg").textContent="اكتب اسم المستخدم وكلمة المرور.";$("gateMsg").classList.add("on");
-    b.disabled=false;b.textContent="دخول";return;
-  }
-  const email=u.includes("@")?u:u+"@"+DOMAIN;
-  try{ await signInWithEmailAndPassword(auth,email,$("pw").value) }
-  catch(e){
-    const m={"auth/invalid-credential":"الاسم أو كلمة المرور غير صحيحة.",
-             "auth/user-not-found":"ما فيه مستخدم بهذا الاسم.",
-             "auth/wrong-password":"كلمة المرور غير صحيحة.",
-             "auth/invalid-email":"اسم المستخدم فيه رموز غير مسموحة.",
-             "auth/too-many-requests":"محاولات كثيرة — انتظر شوي وجرّب.",
-             "auth/network-request-failed":"ما فيه اتصال بالإنترنت."}[e.code]||"ما قدرنا نسجّل الدخول.";
-    $("gateMsg").textContent=m; $("gateMsg").classList.add("on");
-  }
-  b.disabled=false; b.textContent="دخول";
+}
+function signout(){
+  try{sessionStorage.removeItem(KEY)}catch(e){}
+  location.reload();
 }
 
 /* ───── الاشتراكات اللحظية ───── */
@@ -420,7 +414,7 @@ function renderQR(){
 /* ───── الأحداث ───── */
 const ACT={
   "signin":()=>signin(),
-  "signout":()=>signOut(auth),
+  "signout":()=>signout(),
   "eye":()=>{const p=$("pw");p.type=p.type==="password"?"text":"password";$("eye").textContent=p.type==="password"?"👁":"🙈"},
   "page":v=>{
     ["live","tabs","tables","qr"].forEach(k=>{
@@ -456,6 +450,8 @@ document.addEventListener("click",e=>{
 document.addEventListener("keydown",e=>{
   if(e.key==="Enter"&&$("gate").style.display!=="none")signin();
 });
+$("em").value=USER; $("pw").value=PASS;
+try{ if(sessionStorage.getItem(KEY)==="1")openApp() }catch(e){}
 </script>
 </body>
 </html>
