@@ -125,6 +125,11 @@ label{display:block;font-size:13px;font-weight:700;margin:0 0 6px}
 .badge{background:#fff;color:var(--bad);border-radius:99px;padding:0 7px;font-size:11px;font-weight:800;margin-right:4px}
 .call{display:flex;align-items:center;gap:13px;flex-wrap:wrap;background:var(--bad-soft);border:1.5px solid var(--bad);border-right-width:5px;border-radius:var(--r);padding:12px 14px;margin-bottom:10px;animation:tap 1.4s ease-in-out infinite}
 @keyframes tap{0%,100%{border-right-color:var(--bad)}50%{border-right-color:#E2897C}}
+.call.mac{background:var(--brand-soft);border-color:var(--brand)}
+.call.mac .amt{color:var(--brand-ink)}
+@keyframes tapm{0%,100%{border-right-color:var(--brand)}50%{border-right-color:#7FB8B2}}
+.call.mac{animation-name:tapm}
+.call .ico{font-size:20px;flex:none}
 .call b{font-size:15px}
 .call .i{flex:1;min-width:170px}
 .call .i span{display:block;font-size:12.5px;color:var(--ink-2);font-weight:400}
@@ -405,7 +410,7 @@ function start(){
     const fresh=calls.filter(x=>!S.calls.has(x.id));
     calls.forEach(x=>S.calls.add(x.id));
     S.sessions.filter(x=>!x.billRequested||x.paid).forEach(x=>S.calls.delete(x.id));
-    if(fresh.length&&S.ready&&S.sound){beep();beep()}
+    if(fresh.length&&S.ready&&S.sound){beep();setTimeout(beep,260);setTimeout(beep,520)}
     renderCalls(); renderTabs(); renderStats();
   },err=>console.error("sessions",err));
 
@@ -503,10 +508,13 @@ function renderCalls(){
   $("callStrip").innerHTML=calls.map(x=>{
     const m=Math.max(1,Math.round((Date.now()-x.billRequested)/60000));
     const tot=sesTotal(x);
-    return `<div class="call"><b>🔔 ${esc(sesLabel(x))} طالب الحساب</b>
-      <span class="i"><span>${esc(x.name)} · ${esc(x.phone)} · من ${m} دقيقة</span></span>
+    const mac=x.billMethod!=="cash";
+    return `<div class="call ${mac?"mac":""}">
+      <span class="ico">${mac?"💳":"💵"}</span>
+      <b>${esc(sesLabel(x))} — ${mac?"ودّي له جهاز الشبكة":"يبي يدفع كاش"}</b>
+      <span class="i"><span>${esc(x.name)} · ${esc(x.phone)} · طلب من ${m} دقيقة</span></span>
       <span class="amt">${rs(tot)}</span>
-      <button class="btn btn--main btn--sm" data-a="cash" data-v="${x.id}|${tot.toFixed(2)}">حصّلت المبلغ</button>
+      <button class="btn btn--main btn--sm" data-a="cash" data-v="${x.id}|${tot.toFixed(2)}">تم التحصيل</button>
       <button class="btn btn--out btn--sm" data-a="unring" data-v="${x.id}">تجاهل</button></div>`;
   }).join("");
 }
@@ -571,7 +579,7 @@ function renderTabs(){
     return `<div class="trow" ${s.billRequested?'style="border-color:var(--bad);border-right-width:4px"':""}>${badge}
       <span class="trow__i"><b>${esc(s.name)}</b><span>${esc(s.phone)} · ${sub} · ${Math.round((Date.now()-s.at)/60000)} دقيقة</span></span>
       <span class="trow__s">${rs(tot)}</span>
-      ${s.billRequested?'<span class="badge" style="background:var(--bad);color:#fff">طلب الحساب</span>':""}
+      ${s.billRequested?`<span class="badge" style="background:${s.billMethod==="cash"?"var(--tin)":"var(--brand)"};color:#fff">${s.billMethod==="cash"?"يبي يدفع كاش":"يبي جهاز الشبكة"}</span>`:""}
       <button class="btn btn--out btn--sm" data-a="cash" data-v="${s.id}|${tot.toFixed(2)}">دفع كاش</button></div>`;
   }).join(""):`<div class="empty">ما فيه حسابات مفتوحة الآن.</div>`;
 }
@@ -806,7 +814,7 @@ const ACT={
     if(!confirm("تأكيد استلام "+tot+" ر.س كاش وإقفال الحساب؟"))return;
     await setDoc(doc(SES,id),{paid:true,paidAt:Date.now(),total:+tot,method:"cash"},{merge:true}).catch(()=>alert("ما قدرنا نقفل الحساب."));
   },
-  "unring":async v=>{await setDoc(doc(SES,v),{billRequested:null},{merge:true}).catch(()=>{})},
+  "unring":async v=>{await setDoc(doc(SES,v),{billRequested:null,billMethod:null},{merge:true}).catch(()=>{})},
   "seed":()=>seedMenu(),
   "save-item":(v,el)=>saveItem(v,el.closest(".mrow")),
   "toggle-item":async v=>{const m=S.menu.find(x=>x.id===v);await updateDoc(doc(MEN,v),{active:m.active===false}).catch(()=>menuMsg("ما قدرنا نحدّث."))},
