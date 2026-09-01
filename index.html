@@ -172,6 +172,9 @@ select.input{appearance:none;background-image:linear-gradient(45deg,transparent 
 .qrc .b{padding:6px;display:inline-grid;place-items:center;margin:9px 0 7px;min-height:114px}
 .qrc .t{font-size:23px;font-weight:800;line-height:1.2}
 .qrc .h{font-size:11.5px;color:var(--ink-3);font-weight:400}
+.qrc .lnk{display:block;font-size:10.5px;color:var(--brand);margin-top:7px;direction:ltr;word-break:break-all;text-decoration:none;line-height:1.5}
+.qrc .lnk:hover{text-decoration:underline}
+.siteHint{font-size:11.5px;color:var(--ink-3);font-weight:400;margin-top:5px;direction:ltr;text-align:left}
 @media (max-width:900px){.board{grid-template-columns:1fr}}
 @media print{.top,.head,.addbar,.noprint{display:none!important}.wrap{padding:0}.qrg{grid-template-columns:repeat(3,1fr)}}
 </style>
@@ -283,9 +286,11 @@ select.input{appearance:none;background-image:linear-gradient(45deg,transparent 
       <div class="head">
         <div><h2>أكواد QR</h2><div class="st">اطبعها والصقها على الطاولات وستاندات المواقف</div></div>
         <div style="display:flex;gap:9px;align-items:flex-end;flex-wrap:wrap">
-          <div class="fld" style="margin:0"><label for="site">رابط موقع العميل</label>
-            <input class="input" id="site" placeholder="https://cafe-3a2fa.web.app" style="min-width:260px"></div>
-          <button class="btn btn--out btn--sm" data-a="save-site">حفظ وتحديث</button>
+          <div class="fld" style="margin:0"><label for="site">رابط موقع العميل (مجلد index.html)</label>
+            <input class="input" id="site" dir="ltr" placeholder="https://user.github.io/repo/" style="min-width:290px">
+            <div class="siteHint" id="siteHint"></div></div>
+          <button class="btn btn--out btn--sm" data-a="use-here">استخدم رابط هذه الصفحة</button>
+          <button class="btn btn--main btn--sm" data-a="save-site">حفظ وتحديث</button>
           <button class="btn btn--main btn--sm" data-a="print">طباعة</button>
         </div>
       </div>
@@ -422,9 +427,9 @@ function start(){
   },err=>console.error("tables",err));
 
   getDoc(doc(db,"meta","config")).then(d=>{
-    S.site=(d.exists()&&d.data().siteUrl)||location.origin;
+    S.site=(d.exists()&&d.data().siteUrl)||here();
     $("site").value=S.site; renderQR();
-  }).catch(()=>{S.site=location.origin;$("site").value=S.site});
+  }).catch(()=>{S.site=here();$("site").value=S.site});
 
   tick(); setInterval(tick,20000);
   rollover(); setInterval(rollover,36e5);
@@ -597,17 +602,34 @@ async function addTable(){
 }
 
 /* ───── الأكواد ───── */
+/* يحوّل أي رابط لمجلد صالح: يشيل اسم الملف والباراميترات ويضمن / في الآخر */
+function siteBase(u){
+  let v=String(u||"").trim();
+  if(!v)return here();
+  if(!/^https?:\/\//i.test(v))v="https://"+v;
+  try{
+    const x=new URL(v);
+    let p=x.pathname.replace(/[^/]*\.html?$/i,"");   // شيل admin.html أو index.html
+    if(!p.endsWith("/"))p+="/";
+    return x.origin+p;
+  }catch(e){ return here() }
+}
+/* مجلد الصفحة الحالية — يشتغل صح على GitHub Pages وFirebase Hosting */
+const here=()=>location.origin+location.pathname.replace(/[^/]*$/,"");
+
 function renderQR(){
   const g=$("qrg"); g.innerHTML="";
-  const base=(S.site||location.origin).replace(/\/+$/,"");
+  const base=siteBase(S.site);
+  $("siteHint").textContent="مثال على الرابط الناتج: "+base+"?t=1";
   S.tables.filter(t=>t.active!==false).forEach(t=>{
     const spot=t.kind==="spot";
-    const url=base+(spot?"/?c="+t.no:"/?t="+t.no);
+    const url=base+(spot?"?c="+t.no:"?t="+t.no);
     const c=document.createElement("div");
     c.className="qrc";
     c.innerHTML=`<div class="w">سِدر</div><div class="b"></div>
       <div class="t">${spot?"موقف "+esc(t.no):esc(t.no)}</div>
-      <div class="h">${spot?"امسح واطلب من سيارتك":"امسح واطلب من طاولتك"}</div>`;
+      <div class="h">${spot?"امسح واطلب من سيارتك":"امسح واطلب من طاولتك"}</div>
+      <a class="lnk noprint" href="${url}" target="_blank" rel="noopener">${esc(url)}</a>`;
     g.appendChild(c);
     makeQR(c.querySelector(".b"),url);
   });
@@ -794,10 +816,12 @@ const ACT={
   "xlsx":v=>exportMonth(v),
   "sound":()=>{S.sound=!S.sound;$("sndBtn").textContent=S.sound?"🔔 الصوت: مفعّل":"🔕 الصوت: مطفي";if(S.sound)beep()},
   "save-site":async()=>{
-    S.site=$("site").value.trim()||location.origin;
+    S.site=siteBase($("site").value.trim()||here());
+    $("site").value=S.site;
     await setDoc(doc(db,"meta","config"),{siteUrl:S.site},{merge:true}).catch(()=>{});
     renderQR();
   },
+  "use-here":()=>{$("site").value=here();ACT["save-site"]()},
   "print":()=>window.print()
 };
 document.addEventListener("click",e=>{
